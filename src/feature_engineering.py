@@ -49,7 +49,7 @@ def edge_features(G: nx.MultiDiGraph,
     5. road type code (/13)
     6. historical/synthetic traffic load (clipped to [0, 1])
     7. edge-betweenness centrality (already in [0, 1])
-    8. current simulated occupancy/load (clipped to [0, 1])
+    8. lane capacity proxy (lanes / 4, clipped to [0, 1])
 
     All values are normalised roughly to [0, 1].
 
@@ -70,6 +70,9 @@ def edge_features(G: nx.MultiDiGraph,
     bc_map = _betweenness_cache(G)
     bc_val = bc_map.get((u, v), 0.0)
 
+    lanes = data.get("lanes", 1)
+    capacity_proxy = np.clip(lanes / 4.0, 0.0, 1.0)  # normalised lane capacity
+
     feat = np.array([
         min(data.get("length", 100.0), 5000.0) / 5000.0,
         min(data.get("speed_kph", 25.0), 80.0) / 80.0,
@@ -79,7 +82,7 @@ def edge_features(G: nx.MultiDiGraph,
         data.get("road_type_code", 12) / 13.0,
         np.clip(load, 0.0, 1.0),
         np.clip(bc_val, 0.0, 1.0),
-        np.clip(load, 0.0, 1.0),
+        capacity_proxy,
     ], dtype=np.float64)
     return feat
 
